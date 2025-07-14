@@ -4,6 +4,12 @@ from sklearn.compose import make_column_transformer
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
+from sklearn.dummy import DummyClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import plot_tree
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.neighbors import KNeighborsClassifier
 
 df = pd.read_csv('marketing_investimento.csv')
 
@@ -63,4 +69,51 @@ variavel_alvo = label_encoder.fit_transform(variavel_alvo)
 print(variavel_alvo)
 
 # Separando os dados em treino e teste
-x_train, x_test, y_train, y_test = train_test_split(variavel_explicativa, variavel_alvo, stratify=variavel_alvo, random_state=5)
+x_train, x_test, y_train, y_test = train_test_split(pd_variavel_explicativa, variavel_alvo, stratify=variavel_alvo, random_state=5)
+
+# Criando o modelo dummy
+# Resultado de 60% de acerto
+dummy = DummyClassifier()
+dummy.fit(x_train, y_train)
+
+# Avaliando o modelo dummy
+print(dummy.score(x_test, y_test))
+
+# Criando o modelo de árvore de decisão
+arvore = DecisionTreeClassifier(random_state=5)
+arvore.fit(x_train, y_train)
+
+# Previsão de novos dados
+print(arvore.predict(x_test))
+
+# Avaliando o modelo de árvore de decisão - Resultado de 66%
+print(arvore.score(x_test, y_test))
+
+plt.figure(figsize=(15, 6))
+plot_tree(arvore, filled=True, class_names = ['Não', 'Sim'], feature_names=x_train.columns)
+# plt.show()
+
+# Criando o modelo de árvore de decisão, foi visto que o modelo anterior apenas decorou os padrões
+# Agora iremos diminuir a profundidade da árvore
+arvore = DecisionTreeClassifier(max_depth=3, random_state=5)
+arvore.fit(x_train, y_train)
+
+# Avaliando o modelo de árvore de decisão - Resultado de 71% > dummy
+print(arvore.score(x_test, y_test))
+
+plt.figure(figsize=(15, 6))
+plot_tree(arvore, filled=True, class_names = ['Não', 'Sim'], feature_names=x_train.columns)
+# plt.show()
+
+# Normalizando os dados para usar no modelo KNN
+normalizador = MinMaxScaler()
+x_train_normalizado = normalizador.fit_transform(x_train)
+print(pd.DataFrame(x_train_normalizado))
+
+# Criando o modelo KNN
+knn = KNeighborsClassifier(n_neighbors=3)
+knn.fit(x_train_normalizado, y_train)
+
+x_test_normalizado = normalizador.transform(x_test) # Transformando os dados de teste
+
+print(knn.score(x_test_normalizado, y_test)) # 68% de acerto
