@@ -10,6 +10,7 @@ from sklearn.tree import plot_tree
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.neighbors import KNeighborsClassifier
+import pickle
 
 df = pd.read_csv('marketing_investimento.csv')
 
@@ -117,3 +118,59 @@ knn.fit(x_train_normalizado, y_train)
 x_test_normalizado = normalizador.transform(x_test) # Transformando os dados de teste
 
 print(knn.score(x_test_normalizado, y_test)) # 68% de acerto
+
+print(f'Acurácia do modelo dummy: {dummy.score(x_test, y_test)}')
+print(f'Acurácia do modelo KNN: {knn.score(x_test_normalizado, y_test)}')
+print(f'Acurácia do modelo árvore de decisão: {arvore.score(x_test, y_test)}')
+
+# Salvando o modelo KNN
+with open('modelo_knn.pkl', 'wb') as f:
+    pickle.dump(knn, f)
+
+# Salvando o modelo árvore de decisão
+with open('modelo_arvore.pkl', 'wb') as f:
+    pickle.dump(arvore, f)
+
+# Salvando o modelo dummy
+with open('modelo_dummy.pkl', 'wb') as f:
+    pickle.dump(dummy, f)
+
+# Salvando o OneHotEncoder e o MinMaxScaler
+with open('transformadores.pkl', 'wb') as f:
+    pickle.dump({'one_hot': one_hot, 'normalizador': normalizador}, f)
+
+novo_dado = {
+    'estado_civil': ['solteiro (a)'],
+    'escolaridade': ['superior'],
+    'inadimplencia': ['nao'],
+    'fez_emprestimo': ['sim'],
+    'idade': [30],
+    'saldo': [1000],
+    'tempo_ult_contato': [10],
+    'numero_contatos': [10]
+}
+
+novo_dado = pd.DataFrame(novo_dado)
+print("\nNovo dado para previsão:")
+print(novo_dado)
+
+# Carregando os modelos e transformadores
+with open('transformadores.pkl', 'rb') as f:
+    transformadores = pickle.load(f)
+    one_hot = transformadores['one_hot']
+    normalizador = transformadores['normalizador']
+
+with open('modelo_knn.pkl', 'rb') as f:
+    modelo_knn = pickle.load(f)
+
+with open('modelo_arvore.pkl', 'rb') as f:
+    modelo_arvore = pickle.load(f)
+
+# Aplicando as transformações na ordem correta
+novo_dado_transformado = one_hot.transform(novo_dado)
+novo_dado_normalizado = normalizador.transform(novo_dado_transformado)
+
+# Fazendo as previsões
+print("\nPrevisão KNN:", "Sim" if modelo_knn.predict(novo_dado_normalizado)[0] == 1 else "Não")
+print("Previsão Árvore:", "Sim" if modelo_arvore.predict(novo_dado_transformado)[0] == 1 else "Não")
+
